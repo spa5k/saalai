@@ -1,4 +1,4 @@
-import { User } from '../models/User';
+import { User, IUserDocument } from '../models/User';
 import { IPagination, IItems } from '../types';
 import { config } from '../config/config';
 
@@ -17,21 +17,30 @@ export class UserService {
     const query = this.buildSearchQuery(params.search);
     const sort = this.buildSortQuery(sortBy);
 
-    const [items, total] = await Promise.all([
+    const [documents, total] = await Promise.all([
       User.find(query)
         .sort(sort)
         .skip(skip)
-        .limit(limit)
-        .lean(),
+        .limit(limit),
       User.countDocuments(query),
     ]);
+    const items = documents.map((doc: IUserDocument) => ({
+      id: (doc as any)._id.toString(),
+      gender: doc.gender,
+      name: doc.name,
+      address: doc.address,
+      email: doc.email,
+      age: doc.age,
+      picture: doc.picture,
+      createdAt: doc.createdAt,
+    }));
 
     return {
       total,
       limit,
       page,
       sortBy,
-      items: items as IItems[],
+      items,
     };
   }
 

@@ -4,7 +4,12 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "bun run src/index.ts",
-    "test": "jest"
+    "test": "jest",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:clean": "docker compose down -v"
   },
   "dependencies": {
     "@hono/node-server": "^1.8.2",
