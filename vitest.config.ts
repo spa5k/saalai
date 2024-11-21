@@ -1,26 +1,27 @@
 import { defineConfig } from "vitest/config";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["**/*.test.ts"],
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    exclude: ["**/node_modules/**", "**/dist/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
       exclude: [
-        "node_modules/**",
+        "coverage/**",
         "dist/**",
-        "**/*.test.ts",
-        "vitest.config.ts",
+        "**/*.d.ts",
+        "test{,s}/**",
+        "**/*.test.{js,jsx,ts,tsx}",
+        "**/__tests__/**",
       ],
     },
-    testTimeout: 60000,
-    hookTimeout: 60000,
-    fileParallelism: false,
-    // mode defines what ".env.{mode}" file to choose if exists
-    env: {
+    env:{
       NODE_ENV: "test",
     },
   },
-}));
+});
