@@ -56,7 +56,14 @@ const fetchUsersRoute = createRoute({
         'application/json': {
           schema: z.object({
             message: z.string(),
-          }),
+            progressId: z.string(),
+            progress: z.object({
+              totalBatches: z.number(),
+              completedBatches: z.number(),
+              pendingBatches: z.number(),
+              status: z.enum(['running', 'completed', 'failed']),
+            }),
+          }).openapi('FetchUsersResponse'),
         },
       },
       description: 'User fetch process started',
@@ -124,6 +131,62 @@ const updateConfigRoute = createRoute({
   summary: 'Update Random User API configuration',
 });
 
+const getBatchProgressRoute = createRoute({
+  method: 'get',
+  path: '/users/fetch/{progressId}',
+  request: {
+    params: z.object({
+      progressId: z.string().openapi({
+        param: {
+          name: 'progressId',
+          in: 'path',
+        },
+        example: '507f1f77bcf86cd799439011',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            progress: z.object({
+              totalBatches: z.number(),
+              completedBatches: z.number(),
+              pendingBatches: z.number(),
+              status: z.enum(['running', 'completed', 'failed']),
+              error: z.string().optional(),
+            }),
+          }),
+        },
+      },
+      description: 'Batch progress status',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Progress not found',
+    },
+    500: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Internal Server Error',
+    },
+  },
+  tags: ['Users'],
+  summary: 'Get batch progress status',
+});
+
 // Register routes
 app.openapi(getUsersRoute, async (c) => {
   try {
@@ -147,8 +210,20 @@ app.openapi(getUsersRoute, async (c) => {
 app.openapi(fetchUsersRoute, async (c) => {
   try {
     logger.info('Starting user fetch process');
-    await randomUserService.fetchAndStoreUsers();
-    return c.json({ message: 'User fetch process started' }, 200);
+    const progress = await randomUserService.fetchAndStoreUsers();
+    
+    const response = {
+      message: 'User fetch process started',
+      progressId: progress._id.toString(),
+      progress: {
+        totalBatches: progress.totalBatches,
+        completedBatches: progress.completedBatches,
+        pendingBatches: progress.pendingBatches,
+        status: progress.status,
+      },
+    } as const;
+
+    return c.json(response, 200);
   } catch (error) {
     logger.error('Error starting user fetch', { error });
     return c.json({ error: 'Internal Server Error' }, 500);
@@ -166,6 +241,30 @@ app.openapi(updateConfigRoute, async (c) => {
     if (error instanceof z.ZodError) {
       return c.json({ error: 'Invalid request body' }, 400);
     }
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+
+app.openapi(getBatchProgressRoute, async (c) => {
+  try {
+    const { progressId } = c.req.valid('param');
+    const progress = await randomUserService.getBatchProgress(progressId);
+    
+    if (!progress) {
+      return c.json({ error: 'Progress not found' }, 404);
+    }
+
+    return c.json({
+      progress: {
+        totalBatches: progress.totalBatches,
+        completedBatches: progress.completedBatches,
+        pendingBatches: progress.pendingBatches,
+        status: progress.status,
+        ...(progress.error && { error: progress.error }),
+      },
+    }, 200);
+  } catch (error) {
+    logger.error('Error fetching batch progress', { error });
     return c.json({ error: 'Internal Server Error' }, 500);
   }
 });

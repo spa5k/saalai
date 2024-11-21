@@ -5,10 +5,21 @@ import { getRouterName, showRoutes } from 'hono/dev'
 import { swaggerUI } from '@hono/swagger-ui'
 import { CronService } from './services/CronService';
 import { logger } from './utils/logger';
+import { timeout } from 'hono/timeout'
+import { HTTPException } from 'hono/http-exception'
 
 const app = new OpenAPIHono();
 const v1 = new OpenAPIHono();
 const cronService = new CronService();
+
+// Custom timeout exception
+const customTimeoutException = (context: any) =>
+  new HTTPException(408, {
+    message: `Request timeout after ${context.req.headers.get('Duration')}ms. Please try again later.`,
+  });
+
+// Apply 1-minute timeout middleware to all API routes
+v1.use('*', timeout(120_000, customTimeoutException));
 
 // Mount Swagger UI and docs under v1
 v1.get('/ui', swaggerUI({ url: '/api/v1/docs' }))
