@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { config } from '../config/config';
 import { User } from '../models/User';
+import { Config, IApiConfig } from '../models/Config';
 import { Queue } from '../utils/Queue';
 import { IItems } from '../types';
 
@@ -8,9 +8,36 @@ export class RandomUserService {
   private queue: Queue;
   private requestCount: number = 0;
   private lastRequestTime: number = Date.now();
+  private config: IApiConfig | null = null;
 
   constructor() {
     this.queue = new Queue();
+  }
+
+  private async loadConfig(): Promise<IApiConfig> {
+    if (this.config) return this.config;
+
+    const config = await Config.findOne({ key: 'default' });
+    if (!config) {
+      // Create default config if not exists
+      const defaultConfig = await Config.create({
+        key: 'default',
+        api: {
+          randomUser: {
+            baseUrl: 'https://randomuser.me/api/',
+            requestsPerSecond: 5,
+            sleepTime: 30000,
+            batchSize: 300,
+            batchSleep: 5000,
+          },
+        },
+      });
+      this.config = defaultConfig.api.randomUser;
+    } else {
+      this.config = config.api.randomUser;
+    }
+
+    return this.config;
   }
 
   private async sleep(ms: number): Promise<void> {
@@ -18,8 +45,10 @@ export class RandomUserService {
   }
 
   private async rateLimitedRequest(results: number): Promise<any> {
+    const config = await this.loadConfig();
     const now = Date.now();
-    if (this.requestCount >= config.api.randomUser.requestsPerSecond) {
+    
+    if (this.requestCount >= config.requestsPerSecond) {
       if (now - this.lastRequestTime < 1000) {
         await this.sleep(1000 - (now - this.lastRequestTime));
       }
@@ -28,12 +57,13 @@ export class RandomUserService {
     }
 
     this.requestCount++;
-    const response = await axios.get(`${config.api.randomUser.baseUrl}?results=${results}`);
+    const response = await axios.get(`${config.baseUrl}?results=${results}`);
     return response.data;
   }
 
   public async fetchAndStoreUsers(totalUsers: number = 5000): Promise<void> {
-    const batchSize = config.api.randomUser.batchSize;
+    const config = await this.loadConfig();
+    const batchSize = config.batchSize;
     const batches = Math.ceil(totalUsers / batchSize);
 
     for (let i = 0; i < batches; i++) {
@@ -46,11 +76,11 @@ export class RandomUserService {
         await User.insertMany(users);
       });
 
-      if (i > 0 && i % config.api.randomUser.requestsPerSecond === 0) {
-        await this.sleep(config.api.randomUser.sleepTime);
+      if (i > 0 && i % config.requestsPerSecond === 0) {
+        await this.sleep(config.sleepTime);
       }
 
-      await this.sleep(config.api.randomUser.batchSleep);
+      await this.sleep(config.batchSleep);
     }
   }
 
@@ -68,5 +98,20 @@ export class RandomUserService {
       age: userData.dob.age.toString(),
       picture: userData.picture.large,
     };
+  }
+
+  // Method to update configuration
+  public async updateConfig(newConfig: Partial<IApiConfig>): Promise<void> {
+    await Config.updateOne(
+      { key: 'default' },
+      { 
+        $set: {
+          'api.randomUser': { ...this.config, ...newConfig },
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
+    this.config = null; // Force reload of config
   }
 } 

@@ -1,15 +1,15 @@
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/user-service
-    depends_on:
-      - mongodb
+  # app:
+  #   build: .
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/user-service
+  #   depends_on:
+  #     - mongodb
 
   mongodb:
     image: mongo:latest

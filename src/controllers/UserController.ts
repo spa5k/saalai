@@ -1,37 +1,189 @@
-import { Hono } from 'hono';
-import { Context } from 'hono/dist/types';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 import { UserService } from '../services/UserService';
 import { RandomUserService } from '../services/RandomUserService';
+import { UserSchema, UsersQuerySchema, ApiConfigSchema } from '../schemas/openapi';
+import { logger } from '../utils/logger';
 
-const app = new Hono();
+const app = new OpenAPIHono();
 const userService = new UserService();
 const randomUserService = new RandomUserService();
 
-app.get('/users', async (c: Context) => {
-  const { limit, page, sortBy } = c.req.query();
-  const search = c.req.query('search') ? JSON.parse(c.req.query('search')!) : undefined;
+// Define routes
+const getUsersRoute = createRoute({
+  method: 'get',
+  path: '/users',
+  request: {
+    query: UsersQuerySchema,
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            total: z.number(),
+            limit: z.number(),
+            page: z.number(),
+            sortBy: z.string(),
+            items: z.array(UserSchema),
+          }).openapi('PaginatedUsers'),
+        },
+      },
+      description: 'Successfully retrieved users',
+    },
+    500: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Internal Server Error',
+    },
+  },
+  tags: ['Users'],
+  summary: 'Get paginated users list',
+});
 
+const fetchUsersRoute = createRoute({
+  method: 'post',
+  path: '/users/fetch',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+          }),
+        },
+      },
+      description: 'User fetch process started',
+    },
+    500: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Internal Server Error',
+    },
+  },
+  tags: ['Users'],
+  summary: 'Start fetching users from external API',
+});
+
+const updateConfigRoute = createRoute({
+  method: 'put',
+  path: '/config/random-user',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ApiConfigSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+          }),
+        },
+      },
+      description: 'Configuration updated successfully',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Invalid request body',
+    },
+    500: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: 'Internal Server Error',
+    },
+  },
+  tags: ['Configuration'],
+  summary: 'Update Random User API configuration',
+});
+
+// Register routes
+app.openapi(getUsersRoute, async (c) => {
   try {
+    const { limit, page, sortBy, search } = c.req.valid('query');
+    logger.info('Fetching users', { limit, page, sortBy, search });
+    
     const result = await userService.getUsers({
       limit: limit ? parseInt(limit) : undefined,
       page: page ? parseInt(page) : undefined,
       sortBy,
-      search,
+      search: search ? JSON.parse(search) : undefined,
     });
 
-    return c.json(result);
+    return c.json(result, 200);
   } catch (error) {
+    logger.error('Error fetching users', { error });
     return c.json({ error: 'Internal Server Error' }, 500);
   }
 });
 
-app.post('/users/fetch', async (c: Context) => {
+app.openapi(fetchUsersRoute, async (c) => {
   try {
+    logger.info('Starting user fetch process');
     await randomUserService.fetchAndStoreUsers();
-    return c.json({ message: 'User fetch process started' });
+    return c.json({ message: 'User fetch process started' }, 200);
   } catch (error) {
+    logger.error('Error starting user fetch', { error });
     return c.json({ error: 'Internal Server Error' }, 500);
   }
+});
+
+app.openapi(updateConfigRoute, async (c) => {
+  try {
+    const body = c.req.valid('json');
+    logger.info('Updating random user config', { config: body });
+    await randomUserService.updateConfig(body);
+    return c.json({ message: 'Configuration updated successfully' }, 200);
+  } catch (error) {
+    logger.error('Error updating config', { error });
+    if (error instanceof z.ZodError) {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+
+// Add OpenAPI documentation
+app.doc('/docs', {
+  openapi: '3.0.0',
+  info: {
+    title: 'Random User API',
+    version: '1.0.0',
+    description: 'API for managing random user data with configurable fetching',
+  },
+  servers: [
+    {
+      url: '/api/v1',
+      description: 'Version 1',
+    },
+  ],
 });
 
 export { app as userController }; 
