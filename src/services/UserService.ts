@@ -1,6 +1,7 @@
 import { User, IUserDocument } from '../models/User';
 import { IPagination, IItems } from '../types';
 import { config } from '../config/config';
+import { validateSearchQuery } from '../schemas/validation';
 
 export class UserService {
   public async getUsers(params: {
@@ -47,11 +48,17 @@ export class UserService {
   private buildSearchQuery(search?: Record<string, any>): Record<string, any> {
     if (!search) return {};
 
+    const validatedSearch = validateSearchQuery(search);
     const query: Record<string, any> = {};
-    Object.entries(search).forEach(([key, value]) => {
+
+    Object.entries(validatedSearch).forEach(([key, value]) => {
       if (value) {
         if (key === 'name' || key === 'email') {
           query[key] = { $regex: value, $options: 'i' };
+        } else if (key === 'age') {
+          query[key] = value;
+        } else if (key === 'country') {
+          query['address.country'] = { $regex: value, $options: 'i' };
         } else {
           query[key] = value;
         }

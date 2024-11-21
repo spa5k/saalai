@@ -47,3 +47,19 @@ export const updateConfigSchema = z.object({
   batchSize: z.number().min(1).max(1000).optional(),
   batchSleep: z.number().min(1000).max(60000).optional(),
 }); 
+
+export const searchQuerySchema = z.object({
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+    age: z.string().optional(),
+    gender: z.enum(['male', 'female']).optional(),
+    country: z.string().optional(),
+  }).strict(); // Ensures no unknown fields
+  
+  export const validateSearchQuery = (search: unknown) => {
+    try {
+      return searchQuerySchema.parse(search);
+    } catch (error) {
+      throw new Error('Invalid search parameters');
+    }
+  }; 
