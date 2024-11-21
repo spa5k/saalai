@@ -1,7 +1,7 @@
-import { User, IUserDocument } from '../models/User';
-import { IPagination, IItems } from '../types';
-import { config } from '../config/config';
-import { validateSearchQuery } from '../schemas/validation';
+import { config } from "../config/config";
+import { IUserDocument, User } from "../models/User";
+import { validateSearchQuery } from "../schemas/validation";
+import { IItems, IPagination } from "../types";
 
 export class UserService {
   public async getUsers(params: {
@@ -53,12 +53,12 @@ export class UserService {
 
     Object.entries(validatedSearch).forEach(([key, value]) => {
       if (value) {
-        if (key === 'name' || key === 'email') {
-          query[key] = { $regex: value, $options: 'i' };
-        } else if (key === 'age') {
+        if (key === "name" || key === "email") {
+          query[key] = { $regex: value, $options: "i" };
+        } else if (key === "age") {
           query[key] = value;
-        } else if (key === 'country') {
-          query['address.country'] = { $regex: value, $options: 'i' };
+        } else if (key === "country") {
+          query["address.country"] = { $regex: value, $options: "i" };
         } else {
           query[key] = value;
         }
@@ -70,11 +70,11 @@ export class UserService {
 
   private buildSortQuery(sortBy: string): Record<string, 1 | -1> {
     const sort: Record<string, 1 | -1> = {};
-    if (sortBy.startsWith('-')) {
+    if (sortBy.startsWith("-")) {
       sort[sortBy.substring(1)] = -1;
     } else {
       sort[sortBy] = 1;
     }
     return sort;
   }
-} 
+}

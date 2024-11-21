@@ -23,17 +23,20 @@ A high-performance API service built with Bun and Hono for fetching, storing, an
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd <repository-name>
 ```
 
 2. Install dependencies:
+
 ```bash
 bun install
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
@@ -42,11 +45,13 @@ cp .env.example .env
 ## Development
 
 Start the development server with hot reloading:
+
 ```bash
 bun run dev
 ```
 
 Run tests:
+
 ```bash
 bun test
 ```
@@ -54,6 +59,7 @@ bun test
 ## Docker Support
 
 Build the Docker image:
+
 ```bash
 make build
 # or
@@ -61,6 +67,7 @@ docker compose build
 ```
 
 Start services:
+
 ```bash
 make up
 # or
@@ -68,6 +75,7 @@ docker compose up -d
 ```
 
 View logs:
+
 ```bash
 make logs
 # or
@@ -75,6 +83,7 @@ docker compose logs -f
 ```
 
 Stop services:
+
 ```bash
 make down
 # or
@@ -82,6 +91,7 @@ docker compose down
 ```
 
 Clean up:
+
 ```bash
 make clean
 # or
@@ -91,6 +101,7 @@ docker compose down -v
 ## API Documentation
 
 Once the server is running, access the API documentation at:
+
 - OpenAPI Specification: http://localhost:3000/api/v1/docs
 - Swagger UI: http://localhost:3000/api/v1/ui
 
@@ -104,6 +115,7 @@ Once the server is running, access the API documentation at:
 ## Configuration
 
 The service can be configured through the database or API:
+
 - Rate limits
 - Batch sizes
 - Sleep times

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const getUsersQuerySchema = z.object({
   limit: z.string().optional().transform((val, ctx) => {
@@ -46,20 +46,20 @@ export const updateConfigSchema = z.object({
   sleepTime: z.number().min(1000).max(60000).optional(),
   batchSize: z.number().min(1).max(1000).optional(),
   batchSleep: z.number().min(1000).max(60000).optional(),
-}); 
+});
 
 export const searchQuerySchema = z.object({
-    name: z.string().optional(),
-    email: z.string().email().optional(),
-    age: z.string().optional(),
-    gender: z.enum(['male', 'female']).optional(),
-    country: z.string().optional(),
-  }).strict(); // Ensures no unknown fields
-  
-  export const validateSearchQuery = (search: unknown) => {
-    try {
-      return searchQuerySchema.parse(search);
-    } catch (error) {
-      throw new Error('Invalid search parameters');
-    }
-  }; 
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  age: z.string().optional(),
+  gender: z.enum(["male", "female"]).optional(),
+  country: z.string().optional(),
+}).strict(); // Ensures no unknown fields
+
+export const validateSearchQuery = (search: unknown) => {
+  try {
+    return searchQuerySchema.parse(search);
+  } catch (error) {
+    throw new Error("Invalid search parameters");
+  }
+};

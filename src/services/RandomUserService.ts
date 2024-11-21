@@ -1,11 +1,11 @@
-import axios from 'axios';
-import { User } from '../models/User';
-import { Config, IApiConfig } from '../models/Config';
-import { Queue } from '../utils/Queue';
-import { IItems } from '../types';
-import { BatchProgress, IBatchProgress } from '../models/BatchProgress';
-import { logger } from '../utils/logger';
-import { Types } from 'mongoose';
+import axios from "axios";
+import { Types } from "mongoose";
+import { BatchProgress, IBatchProgress } from "../models/BatchProgress";
+import { Config, IApiConfig } from "../models/Config";
+import { User } from "../models/User";
+import { IItems } from "../types";
+import { logger } from "../utils/logger";
+import { Queue } from "../utils/Queue";
 
 export class RandomUserService {
   private queue: Queue;
@@ -17,7 +17,7 @@ export class RandomUserService {
   constructor() {
     this.queue = new Queue();
     this.cleanupOldBatches().catch(error => {
-      logger.error('Error during initial batch cleanup', { error });
+      logger.error("Error during initial batch cleanup", { error });
     });
   }
 
@@ -29,38 +29,38 @@ export class RandomUserService {
       // Clean up completed or failed batches older than retention period
       const result = await BatchProgress.deleteMany({
         $or: [
-          { status: 'completed' },
-          { status: 'failed' }
+          { status: "completed" },
+          { status: "failed" },
         ],
-        updatedAt: { $lt: cutoffDate }
+        updatedAt: { $lt: cutoffDate },
       });
 
       // Clean up stale running batches
       const staleResult = await BatchProgress.deleteMany({
-        status: 'running',
-        updatedAt: { $lt: cutoffDate }
+        status: "running",
+        updatedAt: { $lt: cutoffDate },
       });
 
-      logger.info('Batch cleanup completed', {
+      logger.info("Batch cleanup completed", {
         completedBatchesRemoved: result.deletedCount,
-        staleBatchesRemoved: staleResult.deletedCount
+        staleBatchesRemoved: staleResult.deletedCount,
       });
     } catch (error) {
-      logger.error('Error cleaning up old batches', { error });
+      logger.error("Error cleaning up old batches", { error });
     }
   }
 
   private async loadConfig(): Promise<IApiConfig> {
     if (this.config) return this.config;
 
-    const config = await Config.findOne({ key: 'default' });
+    const config = await Config.findOne({ key: "default" });
     if (!config) {
       // Create default config if not exists
       const defaultConfig = await Config.create({
-        key: 'default',
+        key: "default",
         api: {
           randomUser: {
-            baseUrl: 'https://randomuser.me/api/',
+            baseUrl: "https://randomuser.me/api/",
             requestsPerSecond: 5,
             sleepTime: 30000,
             batchSize: 300,
@@ -83,7 +83,7 @@ export class RandomUserService {
   private async rateLimitedRequest(results: number): Promise<any> {
     const config = await this.loadConfig();
     const now = Date.now();
-    
+
     if (this.requestCount >= config.requestsPerSecond) {
       if (now - this.lastRequestTime < 1000) {
         await this.sleep(1000 - (now - this.lastRequestTime));
@@ -101,24 +101,24 @@ export class RandomUserService {
     const config = await this.loadConfig();
     const batchSize = config.batchSize;
     const batches = Math.ceil(totalUsers / batchSize);
-    
-    logger.info('Starting new batch process', {
+
+    logger.info("Starting new batch process", {
       totalUsers,
       batchSize,
-      totalBatches: batches
+      totalBatches: batches,
     });
 
     const batchProgress = (await BatchProgress.create({
       totalBatches: batches,
       completedBatches: 0,
       pendingBatches: batches,
-      status: 'running' as const,
+      status: "running" as const,
       startedAt: new Date(),
     })) as IBatchProgress & { _id: Types.ObjectId };
 
     // Start background processing
     this.processBatches(batchProgress._id.toString(), totalUsers).catch(error => {
-      logger.error('Error in background batch processing', { error });
+      logger.error("Error in background batch processing", { error });
     });
 
     return batchProgress;
@@ -135,11 +135,11 @@ export class RandomUserService {
         const remainingUsers = totalUsers - (i * batchSize);
         const currentBatchSize = Math.min(batchSize, remainingUsers);
 
-        logger.info('Processing batch', {
+        logger.info("Processing batch", {
           batchNumber: i + 1,
           totalBatches: batches,
           batchSize: currentBatchSize,
-          progressId
+          progressId,
         });
 
         await this.queue.add(async () => {
@@ -154,11 +154,11 @@ export class RandomUserService {
             updatedAt: new Date(),
           });
 
-          logger.info('Batch completed', {
+          logger.info("Batch completed", {
             batchNumber: i + 1,
             totalBatches: batches,
             duration: Date.now() - batchStartTime,
-            progressId
+            progressId,
           });
         });
 
@@ -171,34 +171,33 @@ export class RandomUserService {
 
       // Mark as completed
       await BatchProgress.findByIdAndUpdate(progressId, {
-        status: 'completed',
+        status: "completed",
         updatedAt: new Date(),
       });
 
-      logger.info('All batches completed', {
+      logger.info("All batches completed", {
         progressId,
         totalBatches: batches,
-        totalDuration: Date.now() - startTime
+        totalDuration: Date.now() - startTime,
       });
 
       // Schedule cleanup after completion
       setTimeout(async () => {
         await this.cleanupOldBatches();
       }, this.BATCH_RETENTION_HOURS * 60 * 60 * 1000);
-
     } catch (error) {
       // Mark as failed
       await BatchProgress.findByIdAndUpdate(progressId, {
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error",
         updatedAt: new Date(),
       });
 
-      logger.error('Batch processing failed', {
+      logger.error("Batch processing failed", {
         progressId,
         error,
         totalBatches: batches,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       throw error;
@@ -228,15 +227,15 @@ export class RandomUserService {
   // Method to update configuration
   public async updateConfig(newConfig: Partial<IApiConfig>): Promise<void> {
     await Config.updateOne(
-      { key: 'default' },
-      { 
+      { key: "default" },
+      {
         $set: {
-          'api.randomUser': { ...this.config, ...newConfig },
-          updatedAt: new Date()
-        }
+          "api.randomUser": { ...this.config, ...newConfig },
+          updatedAt: new Date(),
+        },
       },
-      { upsert: true }
+      { upsert: true },
     );
     this.config = null; // Force reload of config
   }
-} 
+}

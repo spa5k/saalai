@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Queue } from '../Queue';
-import { logger } from '../../utils/logger';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../../utils/logger";
+import { Queue } from "../Queue";
 
 // Mock logger
-vi.mock('../../utils/logger', () => ({
+vi.mock("../../utils/logger", () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
   },
 }));
 
-describe('Queue', () => {
+describe("Queue", () => {
   let queue: Queue;
 
   beforeEach(() => {
@@ -18,8 +18,8 @@ describe('Queue', () => {
     vi.clearAllMocks();
   });
 
-  describe('Batch Processing', () => {
-    it('should process batches in sequence', async () => {
+  describe("Batch Processing", () => {
+    it("should process batches in sequence", async () => {
       const results: number[] = [];
       const batchSize = 3;
       const totalBatches = 3;
@@ -48,27 +48,25 @@ describe('Queue', () => {
       }
     });
 
-    it('should maintain batch order under load', async () => {
+    it("should maintain batch order under load", async () => {
       const results: number[] = [];
       const batchCount = 5;
       const batchSize = 10;
-      const batches = Array.from({ length: batchCount }, (_, batchIndex) =>
-        Array.from({ length: batchSize }, (_, taskIndex) => {
-          const taskNum = batchIndex * batchSize + taskIndex;
-          return async () => {
-            await new Promise(resolve => 
-              setTimeout(resolve, Math.random() * 20)
-            );
-            results.push(taskNum);
-          };
-        })
+      const batches = Array.from(
+        { length: batchCount },
+        (_, batchIndex) =>
+          Array.from({ length: batchSize }, (_, taskIndex) => {
+            const taskNum = batchIndex * batchSize + taskIndex;
+            return async () => {
+              await new Promise(resolve => setTimeout(resolve, Math.random() * 20));
+              results.push(taskNum);
+            };
+          }),
       );
 
       // Add all batches concurrently
       await Promise.all(
-        batches.flatMap(batch => 
-          batch.map(task => queue.add(task))
-        )
+        batches.flatMap(batch => batch.map(task => queue.add(task))),
       );
 
       // Wait for all tasks to complete
@@ -80,7 +78,7 @@ describe('Queue', () => {
       expect(firstTaskOfEachBatch).toEqual([...firstTaskOfEachBatch].sort((a, b) => a - b));
     });
 
-    it('should log batch processing events', async () => {
+    it("should log batch processing events", async () => {
       const task = async () => {
         await new Promise(resolve => setTimeout(resolve, 10));
       };
@@ -88,11 +86,11 @@ describe('Queue', () => {
       // Wait for the task to complete, not just to be added
       await queue.add(task);
       await new Promise(resolve => setTimeout(resolve, 20));
-      
+
       expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('Processing task'),
-        expect.any(Object)
+        expect.stringContaining("Processing task"),
+        expect.any(Object),
       );
     });
   });
-}); 
+});

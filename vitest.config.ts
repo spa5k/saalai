@@ -20,7 +20,7 @@ export default defineConfig({
         "**/__tests__/**",
       ],
     },
-    env:{
+    env: {
       NODE_ENV: "test",
     },
   },

@@ -1,5 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { IItems, IAddress } from '../types';
+import mongoose, { Document, Schema } from "mongoose";
+import { IAddress, IItems } from "../types";
 
 // Interface for mongoose schema
 interface IUserSchema {
@@ -33,9 +33,9 @@ const UserSchema = new Schema<IUserDocument>({
 });
 
 // Add indexes for better search performance
-UserSchema.index({ name: 'text', email: 'text' });
+UserSchema.index({ name: "text", email: "text" });
 UserSchema.index({ gender: 1 });
-UserSchema.index({ 'address.country': 1 });
+UserSchema.index({ "address.country": 1 });
 UserSchema.index({ age: 1 });
 
 // Method to convert document to IItems
@@ -52,4 +52,4 @@ UserSchema.methods.toItem = function(): IItems {
   };
 };
 
-export const User = mongoose.model<IUserDocument>('User', UserSchema); 
+export const User = mongoose.model<IUserDocument>("User", UserSchema);

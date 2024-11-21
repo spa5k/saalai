@@ -22,4 +22,4 @@ export interface IPagination {
   page: number;
   sortBy: string;
   items: IItems[];
-} 
+}

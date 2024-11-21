@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IApiConfig {
   baseUrl: string;
@@ -32,4 +32,4 @@ const ConfigSchema = new Schema<IConfig>({
   updatedAt: { type: Date, default: Date.now },
 });
 
-export const Config = mongoose.model<IConfig>('Config', ConfigSchema); 
+export const Config = mongoose.model<IConfig>("Config", ConfigSchema);

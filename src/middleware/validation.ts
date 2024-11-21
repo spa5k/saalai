@@ -1,5 +1,5 @@
-import { Context, Next } from 'hono';
-import { z } from 'zod';
+import { Context, Next } from "hono";
+import { z } from "zod";
 
 export const validateQuery = (schema: z.ZodType) => {
   return async (c: Context, next: Next) => {
@@ -9,9 +9,9 @@ export const validateQuery = (schema: z.ZodType) => {
       await next();
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
-        return c.json({ error: 'Invalid query parameters', details: error.errors }, 400);
+        return c.json({ error: "Invalid query parameters", details: error.errors }, 400);
       }
-      return c.json({ error: 'Validation error' }, 400);
+      return c.json({ error: "Validation error" }, 400);
     }
   };
 };
@@ -24,9 +24,9 @@ export const validateBody = (schema: z.ZodType) => {
       await next();
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
-        return c.json({ error: 'Invalid request body', details: error.errors }, 400);
+        return c.json({ error: "Invalid request body", details: error.errors }, 400);
       }
-      return c.json({ error: 'Validation error' }, 400);
+      return c.json({ error: "Validation error" }, 400);
     }
   };
-}; 
+};

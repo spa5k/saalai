@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from "./logger";
 
 export class Queue {
   private queue: (() => Promise<void>)[] = [];
@@ -17,9 +17,9 @@ export class Queue {
       const task = this.queue.shift();
       if (task) {
         await task();
-        logger.info('Processing task', { /* task details */ });
+        logger.info("Processing task", {/* task details */});
       }
     }
     this.processing = false;
   }
-} 
+}

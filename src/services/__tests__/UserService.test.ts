@@ -1,47 +1,47 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UserService } from '../UserService';
-import { User } from '../../models/User';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { User } from "../../models/User";
+import { UserService } from "../UserService";
 
 // Mock the User model
-vi.mock('../../models/User', () => ({
+vi.mock("../../models/User", () => ({
   User: {
     find: vi.fn(),
     countDocuments: vi.fn(),
   },
 }));
 
-describe('UserService', () => {
+describe("UserService", () => {
   let userService: UserService;
   const mockUsers = [
     {
-      _id: '1',
-      gender: 'male',
-      name: 'Test User',
+      _id: "1",
+      gender: "male",
+      name: "Test User",
       address: {
-        city: 'Test City',
-        state: 'Test State',
-        country: 'Test Country',
-        street: 'Test Street',
+        city: "Test City",
+        state: "Test State",
+        country: "Test Country",
+        street: "Test Street",
       },
-      email: 'test@example.com',
-      age: '25',
-      picture: 'https://example.com/test.jpg',
-      createdAt: new Date('2024-01-01'),
+      email: "test@example.com",
+      age: "25",
+      picture: "https://example.com/test.jpg",
+      createdAt: new Date("2024-01-01"),
     },
     {
-      _id: '2',
-      gender: 'female',
-      name: 'Jane Smith',
+      _id: "2",
+      gender: "female",
+      name: "Jane Smith",
       address: {
-        city: 'Another City',
-        state: 'Another State',
-        country: 'Another Country',
-        street: 'Another Street',
+        city: "Another City",
+        state: "Another State",
+        country: "Another Country",
+        street: "Another Street",
       },
-      email: 'jane@example.com',
-      age: '30',
-      picture: 'https://example.com/jane.jpg',
-      createdAt: new Date('2024-01-02'),
+      email: "jane@example.com",
+      age: "30",
+      picture: "https://example.com/jane.jpg",
+      createdAt: new Date("2024-01-02"),
     },
   ];
 
@@ -64,19 +64,19 @@ describe('UserService', () => {
     (User.countDocuments as any).mockResolvedValue(mockUsers.length);
   });
 
-  describe('getUsers', () => {
-    it('should return paginated users with default parameters', async () => {
+  describe("getUsers", () => {
+    it("should return paginated users with default parameters", async () => {
       const result = await userService.getUsers({});
 
       expect(result).toEqual({
         total: 2,
         limit: 10,
         page: 1,
-        sortBy: 'createdAt',
+        sortBy: "createdAt",
         items: expect.arrayContaining([
           expect.objectContaining({
-            name: 'Test User',
-            email: 'test@example.com',
+            name: "Test User",
+            email: "test@example.com",
           }),
         ]),
       });
@@ -84,8 +84,8 @@ describe('UserService', () => {
       expect(User.find).toHaveBeenCalledWith({});
     });
 
-    it('should apply search filters correctly', async () => {
-      const searchQuery = { name: 'Test' };
+    it("should apply search filters correctly", async () => {
+      const searchQuery = { name: "Test" };
       const filteredMockUsers = [mockUsers[0]];
 
       (User.find as any).mockImplementation(() => ({
@@ -99,16 +99,16 @@ describe('UserService', () => {
 
       expect(result.total).toBe(1);
       expect(result.items[0]).toMatchObject({
-        name: 'Test User',
-        email: 'test@example.com',
+        name: "Test User",
+        email: "test@example.com",
       });
 
       expect(User.find).toHaveBeenCalledWith({
-        name: { $regex: 'Test', $options: 'i' },
+        name: { $regex: "Test", $options: "i" },
       });
     });
 
-    it('should apply pagination correctly', async () => {
+    it("should apply pagination correctly", async () => {
       const firstPageMock = [mockUsers[0]];
       const secondPageMock = [mockUsers[1]];
 
@@ -128,7 +128,7 @@ describe('UserService', () => {
         total: 2,
         limit: 1,
         page: 1,
-        items: [expect.objectContaining({ name: 'Test User' })],
+        items: [expect.objectContaining({ name: "Test User" })],
       });
 
       // Second page
@@ -147,15 +147,13 @@ describe('UserService', () => {
         total: 2,
         limit: 1,
         page: 2,
-        items: [expect.objectContaining({ name: 'Jane Smith' })],
+        items: [expect.objectContaining({ name: "Jane Smith" })],
       });
     });
 
-    it('should sort results correctly', async () => {
+    it("should sort results correctly", async () => {
       // Test ascending sort
-      const ascMock = [...mockUsers].sort((a, b) => 
-        a.createdAt.getTime() - b.createdAt.getTime()
-      );
+      const ascMock = [...mockUsers].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
       (User.find as any).mockImplementation(() => ({
         sort: vi.fn().mockReturnThis(),
@@ -164,16 +162,14 @@ describe('UserService', () => {
       }));
 
       const ascResult = await userService.getUsers({
-        sortBy: 'createdAt',
+        sortBy: "createdAt",
       });
 
-      expect(ascResult.items[0].name).toBe('Test User');
-      expect(ascResult.items[1].name).toBe('Jane Smith');
+      expect(ascResult.items[0].name).toBe("Test User");
+      expect(ascResult.items[1].name).toBe("Jane Smith");
 
       // Test descending sort
-      const descMock = [...mockUsers].sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
-      );
+      const descMock = [...mockUsers].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       (User.find as any).mockImplementation(() => ({
         sort: vi.fn().mockReturnThis(),
@@ -182,14 +178,14 @@ describe('UserService', () => {
       }));
 
       const descResult = await userService.getUsers({
-        sortBy: '-createdAt',
+        sortBy: "-createdAt",
       });
 
-      expect(descResult.items[0].name).toBe('Jane Smith');
-      expect(descResult.items[1].name).toBe('Test User');
+      expect(descResult.items[0].name).toBe("Jane Smith");
+      expect(descResult.items[1].name).toBe("Test User");
     });
 
-    it('should handle empty results', async () => {
+    it("should handle empty results", async () => {
       (User.find as any).mockImplementation(() => ({
         sort: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -203,9 +199,9 @@ describe('UserService', () => {
         total: 0,
         limit: 10,
         page: 1,
-        sortBy: 'createdAt',
+        sortBy: "createdAt",
         items: [],
       });
     });
   });
-}); 
+});
